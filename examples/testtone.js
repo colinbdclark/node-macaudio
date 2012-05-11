@@ -12,7 +12,7 @@ var phaseStep = 880 / node.sampleRate;
 
 node.onaudioprocess = function(e) {
     var L = e.getChannelData(0);
-    var R = e.getChannelData(0);
+    var R = e.getChannelData(1);
     for (var i = 0; i < e.bufferSize; i++) {
         L[i] = R[i] = Math.sin(2 * Math.PI * phase);
         phase += phaseStep;
