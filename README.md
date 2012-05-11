@@ -1,12 +1,14 @@
 # node-macaudio
 The interface is an AudioUnit(Mac) which can generate audio directly using JavaScript.
 
-```
-npm install macaudio
+## Install
+`node-macaudio` is available through npm:
+```sh
+$ npm install macaudio
 ```
 
 ## Usage
-```
+```javascript
 var macaudio = require("macaudio");
 
 var bufferSize = 1024; // 512 or 1024 or 2048 or 4096
@@ -21,7 +23,7 @@ var phaseStep = 880 / node.sampleRate;
 
 node.onaudioprocess = function(e) {
     var L = e.getChannelData(0);
-    var R = e.getChannelData(0);
+    var R = e.getChannelData(1);
     for (var i = 0; i < e.bufferSize; i++) {
         L[i] = R[i] = Math.sin(2 * Math.PI * phase);
         phase += phaseStep;
