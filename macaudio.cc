@@ -1,5 +1,6 @@
 #include <v8.h>
 #include <node.h>
+#include <node_version.h>
 #include <uv.h>
 
 #import <AudioUnit/AudioUnit.h>
@@ -152,7 +153,11 @@ public:
         if (node->_isPlaying) {
             node->_isPlaying = false;
             AudioOutputUnitStop(node->_audioUnit);
+#if NODE_VERSION_AT_LEAST(0, 7, 9)
+            uv_unref((uv_handle_t *)&scope);
+#else
             uv_unref(uv_default_loop());
+#endif
         }
         return scope.Close(Undefined());
     }
@@ -244,7 +249,11 @@ private:
     ~JSOutputNode() {
         if (_isPlaying) {
             _isPlaying = false;
+#if NODE_VERSION_AT_LEAST(0, 7, 9)
+
+#else
             uv_unref(uv_default_loop());
+#endif
         }
         for (uint i = 0; i < _channels; i++) {
             delete _data[i];
