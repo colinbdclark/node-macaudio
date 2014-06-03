@@ -1,4 +1,4 @@
-var macaudio = require("macaudio");
+var macaudio = require("../build/Release/macaudio");
 
 var bufferSize = 1024; // 512 or 1024 or 2048 or 4096
 var node = new macaudio.JavaScriptOutputNode(bufferSize);

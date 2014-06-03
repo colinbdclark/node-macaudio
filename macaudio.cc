@@ -10,10 +10,10 @@ using namespace node;
 
 
 class JSOutputNode : ObjectWrap {
-public:  
+public:
     static v8::Handle<Value> New(const Arguments& args) {
         HandleScope scope;
-        
+
         size_t bufferSize;
         if (args.Length() == 1 && args[0]->IsNumber()) {
             bufferSize = args[0]->NumberValue();
@@ -24,9 +24,9 @@ public:
         } else {
             bufferSize = 1024;
         }
-        
+
         JSOutputNode *node = new JSOutputNode();
-        
+
         // AudioUnit
         AudioComponentDescription cd;
         cd.componentType         = kAudioUnitType_Output;
@@ -34,11 +34,11 @@ public:
         cd.componentManufacturer = kAudioUnitManufacturer_Apple;
         cd.componentFlags        = 0;
         cd.componentFlagsMask    = 0;
-        
+
         AudioComponent component = AudioComponentFindNext(NULL, &cd);
         AudioComponentInstanceNew(component, &node->_audioUnit);
         AudioUnitInitialize(node->_audioUnit);
-        
+
         uint sampleRate;
         {
             Float64 _sampleRate;
@@ -53,18 +53,18 @@ public:
         }
         uint channels = 2;
         node->init(sampleRate, channels, bufferSize);
-        
+
         AURenderCallbackStruct callback;
         callback.inputProc = JSOutputNode::AudioUnitCallback;
         callback.inputProcRefCon = node;
-        
+
         AudioUnitSetProperty(node->_audioUnit,
                              kAudioUnitProperty_SetRenderCallback,
                              kAudioUnitScope_Input,
                              0,
                              &callback,
                              sizeof(AURenderCallbackStruct));
-        
+
         AudioStreamBasicDescription audioFormat;
         audioFormat.mSampleRate       = sampleRate;
         audioFormat.mFormatID         = kAudioFormatLinearPCM;
@@ -75,18 +75,18 @@ public:
         audioFormat.mFramesPerPacket  = 1;
         audioFormat.mBitsPerChannel   = 8 * sizeof(AudioUnitSampleType);
         audioFormat.mReserved         = 0;
-        
+
         AudioUnitSetProperty(node->_audioUnit,
                              kAudioUnitProperty_StreamFormat,
                              kAudioUnitScope_Input,
                              0,
                              &audioFormat,
                              sizeof(audioFormat));
-        
+
         // audioProcessEvent
         Local<ObjectTemplate> t = ObjectTemplate::New();
         t->SetInternalFieldCount(1);
-        
+
         Persistent<Object> e = Persistent<Object>::New(t->NewInstance());
         e->Set(String::New("sampleRate"), Integer::New(sampleRate));
         e->Set(String::New("channels")  , Integer::New(channels));
@@ -96,15 +96,15 @@ public:
                ->GetFunction());
         e->SetPointerInInternalField(0, node);
         node->_audioProcessEvent = e;
-        
+
         node->Wrap(args.This());
-        
+
         return args.This();
     }
-    
+
     static v8::Handle<Value> Start(const Arguments& args) {
         HandleScope scope;
-        
+
         JSOutputNode *node = ObjectWrap::Unwrap<JSOutputNode>(args.This());
         if (! node->_isPlaying) {
             node->_isPlaying = true;
@@ -116,7 +116,7 @@ public:
         }
         return scope.Close(Undefined());
     }
-    
+
     static OSStatus AudioUnitCallback
     (void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
      const AudioTimeStamp *inTimeStamp, UInt32 inBusNumber,
@@ -136,7 +136,7 @@ public:
         }
         return noErr;
     }
-    
+
     static void CallOnAudioProcess(uv_async_t *handle, int status) {
         HandleScope scope;
         JSOutputNode *node = static_cast<JSOutputNode*>(handle->data);
@@ -145,10 +145,10 @@ public:
             node->_onAudioProcess->Call(Context::GetCurrent()->Global(), 1, argv);
         }
     }
-    
+
     static v8::Handle<Value> Stop(const Arguments& args) {
         HandleScope scope;
-        
+
         JSOutputNode *node = ObjectWrap::Unwrap<JSOutputNode>(args.This());
         if (node->_isPlaying) {
             node->_isPlaying = false;
@@ -161,37 +161,37 @@ public:
         }
         return scope.Close(Undefined());
     }
-    
+
     static v8::Handle<Value> GetSampleRate
     (Local<String> property, const AccessorInfo& info) {
         JSOutputNode *node = ObjectWrap::Unwrap<JSOutputNode>(info.Holder());
         return Integer::New(node->_sampleRate);
     }
-    
+
     static v8::Handle<Value> GetChannels
     (Local<String> property, const AccessorInfo& info) {
         JSOutputNode *node = ObjectWrap::Unwrap<JSOutputNode>(info.Holder());
         return Integer::New(node->_channels);
     }
-    
+
     static v8::Handle<Value> GetBufferSize
     (Local<String> property, const AccessorInfo& info) {
         JSOutputNode *node = ObjectWrap::Unwrap<JSOutputNode>(info.Holder());
         return Integer::New(node->_bufferSize);
     }
-    
+
     static v8::Handle<Value> GetIsPlaying
     (Local<String> property, const AccessorInfo& info) {
         JSOutputNode *node = ObjectWrap::Unwrap<JSOutputNode>(info.Holder());
         return v8::Boolean::New(node->_isPlaying);
     }
-    
+
     static v8::Handle<Value> GetOnAudioProcess
     (Local<String> property, const AccessorInfo& info) {
         JSOutputNode *node = ObjectWrap::Unwrap<JSOutputNode>(info.Holder());
         return node->_onAudioProcess;
     }
-    
+
     static void SetOnAudioProcess
     (Local<String> property, Local<Value> value, const AccessorInfo& info) {
         if (!value->IsFunction()) return;
@@ -200,12 +200,12 @@ public:
         Local<Function> func = Local<Function>::Cast(value);
         node->_onAudioProcess = Persistent<Function>::New(func);
     }
-    
+
     static v8::Handle<Value> AudioProcessEventGetChannelData(const Arguments& args) {
         HandleScope scope;
         if (args.Length() == 1 && args[0]->IsNumber()) {
             size_t index = args[0]->ToUint32()->Value();
-            
+
             Local<Object> e = args.Holder();
             void *p = e->GetPointerFromInternalField(0);
             JSOutputNode *node = static_cast<JSOutputNode*>(p);
@@ -219,7 +219,7 @@ public:
         }
         return Undefined();
     }
-    
+
 
 private:
     uint _sampleRate;
@@ -227,13 +227,13 @@ private:
     size_t _bufferSize;
     Persistent<Function> _onAudioProcess;
     Persistent<Object> _audioProcessEvent;
-    
+
     float **_data;
     uint _readIndex;
     bool _isPlaying;
     uv_async_t _notifier;
     AudioUnit _audioUnit;
-    
+
     void init(uint sampleRate, uint channels, size_t bufferSize) {
         _sampleRate = sampleRate;
         _channels   = channels;
@@ -245,7 +245,7 @@ private:
         _readIndex = 0;
         _isPlaying = false;
     }
-    
+
     ~JSOutputNode() {
         if (_isPlaying) {
             _isPlaying = false;
@@ -265,16 +265,15 @@ private:
 };
 
 
-extern "C" {
-    static void init(v8::Handle<Object> target) {
+void Initialize(v8::Handle<Object> exports) {
         HandleScope scope;
-        
+
         Local<FunctionTemplate> t = FunctionTemplate::New(JSOutputNode::New);
         t->SetClassName(String::NewSymbol("JavaScriptOutputNode"));
-        
+
         NODE_SET_PROTOTYPE_METHOD(t, "start", JSOutputNode::Start);
         NODE_SET_PROTOTYPE_METHOD(t, "stop" , JSOutputNode::Stop );
-        
+
         Local<v8::ObjectTemplate> i = t->InstanceTemplate();
         i->SetInternalFieldCount(1);
         i->SetAccessor(String::New("sampleRate"),
@@ -300,8 +299,8 @@ extern "C" {
         i->SetAccessor(String::New("onaudioprocess"),
                        JSOutputNode::GetOnAudioProcess,
                        JSOutputNode::SetOnAudioProcess);
-        target->Set(String::New("JavaScriptOutputNode"), t->GetFunction());
+        exports->Set(String::New("JavaScriptOutputNode"), t->GetFunction());
     }
-    
-    NODE_MODULE(macaudio, init)
-}
+
+
+NODE_MODULE(macaudio, Initialize)

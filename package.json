@@ -1,6 +1,6 @@
 {
   "name": "macaudio",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "The interface is an AudioUnit(Mac) which can generate audio directly using JavaScript.",
   "keywords": ["audio", "AudioUnit", "mac", "sound", "music"],
   "author": "nao yonamine <mohayonao@gmail.com> (http://app.mohayonao.com)",
@@ -14,6 +14,6 @@
       "url" : "https://raw.github.com/mohayonao/node-macaudio/master/LICENSE" }
   ],
   "engines": {
-    "node": ">=0.6.0"
+    "node": ">=0.8.0"
   }
 }
